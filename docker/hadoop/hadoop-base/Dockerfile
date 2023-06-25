@@ -1,5 +1,4 @@
 FROM openjdk:8-jdk-slim-buster
-LABEL maintainer="MarcLamberti"
 
 ENV HADOOP_VERSION=3.1.1
 ENV HADOOP_HOME=/opt/hadoop
@@ -18,6 +17,8 @@ RUN apt-get update -yqq && \
 
 RUN mkdir -p /opt/hadoop
 
+# For fast build, download and keep file with Dockerfile
+# else comment COPY command and uncomment RUN wget.. command
 COPY ./hadoop-3.1.1.tar.gz hadoop.tar.gz
 #RUN wget -c -O hadoop.tar.gz https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz && \
 

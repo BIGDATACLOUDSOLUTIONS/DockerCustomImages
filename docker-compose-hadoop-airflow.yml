@@ -1,49 +1,6 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
+# For Airflow Component: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html
+# For Hadoop Component: Udemy Course: Apache Airflow: The Hands-On Guide by Marc Lamberti
 
-# Basic Airflow cluster configuration for CeleryExecutor with Redis and PostgreSQL.
-#
-# WARNING: This configuration is for local development. Do not use it in a production deployment.
-#
-# This configuration supports basic configuration using environment variables or an .env file
-# The following variables are supported:
-#
-# AIRFLOW_IMAGE_NAME           - Docker image name used to run Airflow.
-#                                Default: apache/airflow:2.6.1
-# AIRFLOW_UID                  - User ID in Airflow containers
-#                                Default: 50000
-# AIRFLOW_PROJ_DIR             - Base path to which all the files will be volumed.
-#                                Default: .
-# Those configurations are useful mostly in case of standalone testing/running Airflow in test/try-out mode
-#
-# _AIRFLOW_WWW_USER_USERNAME   - Username for the administrator account (if requested).
-#                                Default: airflow
-# _AIRFLOW_WWW_USER_PASSWORD   - Password for the administrator account (if requested).
-#                                Default: airflow
-# _PIP_ADDITIONAL_REQUIREMENTS - Additional PIP requirements to add when starting all containers.
-#                                Use this option ONLY for quick checks. Installing requirements at container
-#                                startup is done EVERY TIME the service is started.
-#                                A better way is to build a custom image or extend the official image
-#                                as described in https://airflow.apache.org/docs/docker-stack/build.html.
-#                                Default: ''
-#
-# Feel free to modify this file to suit your needs.
----
 version: '3.8'
 x-airflow-common:
   &airflow-common
@@ -75,8 +32,8 @@ x-airflow-common:
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/test_files:/opt/airflow/test_files
-    - ${AIRFLOW_PROJ_DIR:-.}/airflow.cfg:/opt/airflow/airflow.cfg
+    - ${AIRFLOW_PROJ_DIR:-.}/temp:/opt/airflow/temp
+    - ${AIRFLOW_PROJ_DIR:-./docker/airflow}/airflow.cfg:/opt/airflow/airflow.cfg
     #- ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     #- ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
   user: "${AIRFLOW_UID:-50000}:0"
@@ -93,7 +50,7 @@ services:
 # DATABASE SERVICE
 ######################################################
   postgres:
-    build: './docker/postgres'
+    image: airflow-postgres
     container_name: postgres
     logging:
       driver: "json-file"
@@ -360,7 +317,7 @@ services:
 # HADOOP SERVICES
 ######################################################
   namenode:
-    build: ./docker/hadoop/hadoop-namenode
+    image: hadoop-namenode
     profiles:
       - hadoop
     container_name: namenode
@@ -372,7 +329,7 @@ services:
     ports:
       - "32763:9870"
     volumes:
-      - ./mnt/hadoop/namenode:/hadoop/dfs/name
+      - ${HADOOP_DATA_DIR:-.}/mnt/hadoop/namenode:/hadoop/dfs/name
     environment:
       - CLUSTER_NAME=hadoop_cluster
     healthcheck:
@@ -383,7 +340,7 @@ services:
     restart: always
 
   datanode:
-    build: ./docker/hadoop/hadoop-datanode
+    image: hadoop-datanode
     profiles:
       - hadoop
     container_name: datanode
@@ -395,7 +352,7 @@ services:
     depends_on:
       - namenode
     volumes:
-      - ./mnt/hadoop/datanode:/hadoop/dfs/data
+      - ${HADOOP_DATA_DIR:-.}/mnt/hadoop/datanode:/hadoop/dfs/data
     environment:
       - SERVICE_PRECONDITION=namenode:9870
     healthcheck:
@@ -406,7 +363,7 @@ services:
     restart: always
 
   hive-metastore:
-    build: ./docker/hive/hive-metastore
+    image: hive-metastore
     profiles:
       - hadoop
     container_name: hive-metastore
@@ -431,7 +388,7 @@ services:
     restart: always
 
   hive-server:
-    build: ./docker/hive/hive-server
+    image: hive-server
     profiles:
       - hadoop
     container_name: hive-server
@@ -455,7 +412,7 @@ services:
     restart: always
 
   hive-webhcat:
-    build: ./docker/hive/hive-webhcat
+    image: hive-webhcat
     profiles:
       - hadoop
     container_name: hive-webhcat
@@ -476,7 +433,7 @@ services:
     restart: always
 
   hue:
-    build: ./docker/hue
+    image: hue
     profiles:
       - hue
     container_name: hue
@@ -491,7 +448,7 @@ services:
     ports:
       - "32762:8888"
     volumes:
-      - ./mnt/hue/hue.ini:/usr/share/hue/desktop/conf/z-hue.ini
+      - ./docker/hue/hue.ini:/usr/share/hue/desktop/conf/z-hue.ini
     environment:
       - SERVICE_PRECONDITION=hive-server:10000 postgres:5432
     healthcheck:
@@ -505,7 +462,7 @@ services:
 # SPARK SERVICES
 ######################################################
   spark-master:
-    build: ./docker/spark/spark-master
+    image: spark-master
     profiles:
       - hadoop
     container_name: spark-master
@@ -518,8 +475,8 @@ services:
       - "32766:8082"
       - "32765:7077"
     volumes:
-      - ./mnt/spark/apps:/opt/spark-apps
-      - ./mnt/spark/data:/opt/spark-data
+      - ${HADOOP_DATA_DIR:-.}/mnt/spark/apps:/opt/spark-apps
+      - ${HADOOP_DATA_DIR:-.}/mnt/spark/data:/opt/spark-data
     healthcheck:
       test: [ "CMD", "nc", "-z", "spark-master", "8082" ]
       timeout: 45s
@@ -528,7 +485,7 @@ services:
     restart: always
 
   spark-worker:
-    build: ./docker/spark/spark-worker
+    image: spark-worker
     profiles:
       - hadoop
     container_name: spark-worker
@@ -542,8 +499,8 @@ services:
     ports:
       - "32764:8081"
     volumes:
-      - ./mnt/spark/apps:/opt/spark-apps
-      - ./mnt/spark/data:/opt/spark-data
+      - ${HADOOP_DATA_DIR:-.}/mnt/spark/apps:/opt/spark-apps
+      - ${HADOOP_DATA_DIR:-.}/mnt/spark/data:/opt/spark-data
     healthcheck:
       test: [ "CMD", "nc", "-z", "spark-worker", "8081" ]
       timeout: 45s
@@ -551,7 +508,7 @@ services:
       retries: 10
 
   livy:
-    build: ./docker/livy
+    image: livy
     profiles:
       - hadoop
     container_name: livy

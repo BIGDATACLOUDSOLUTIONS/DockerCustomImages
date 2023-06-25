@@ -1,5 +1,4 @@
 FROM hive-base:latest
-LABEL maintainer="MarcLamberti"
 
 # Defining useful environment variables
 ENV SPARK_VERSION=2.4.5
@@ -33,6 +32,8 @@ RUN apt-get update -yqq && \
 # Installing Scala
 WORKDIR /tmp
 
+# For fast build, download and keep file with Dockerfile
+# else comment COPY command and uncomment RUN wget.. command
 COPY ./scala-2.12.4.tgz scala-${SCALA_VERSION}.tgz
 #RUN wget --no-verbose "https://downloads.typesafe.com/scala/${SCALA_VERSION}/scala-${SCALA_VERSION}.tgz" && \
 RUN tar zxf scala-${SCALA_VERSION}.tgz && \
@@ -43,17 +44,12 @@ RUN tar zxf scala-${SCALA_VERSION}.tgz && \
     rm -rf *
 
 # Installing SBT
-COPY ./sbt-1.2.8.tgz sbt-${SBT_VERSION}.tgz
 RUN export PATH="/usr/local/sbt/bin:$PATH" && \
     apt-get update && \
     apt-get install ca-certificates wget tar && \
-    mkdir -p "/usr/local/sbt"
-
-#RUN wget -qO - --no-check-certificate "https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz" | tar xz -C /usr/local/sbt --strip-components=1 && sbt sbtVersion
-RUN tar xf sbt-${SBT_VERSION}.tgz -C /usr/local/sbt --strip-components=1 && \
-    ln -s /usr/local/sbt/bin/sbt /usr/local/bin/sbt && \
+    mkdir -p "/usr/local/sbt" && \
+    wget -qO - --no-check-certificate "https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz" | tar xz -C /usr/local/sbt --strip-components=1 && \
     sbt sbtVersion
-
 
 # Adding dependencies for PySpark
 RUN apt-get install -y curl python3.7 python3.7-dev python3.7-distutils
@@ -69,7 +65,8 @@ RUN apt-get install -yqq python3-numpy python3-matplotlib python3-scipy python3-
 
 # Installing Spark
 WORKDIR ${SPARK_HOME}
-
+# For fast build, download and keep file with Dockerfile
+# else comment COPY command and uncomment RUN wget.. command
 COPY ./spark-2.4.5-bin-hadoop2.7.tgz spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz
 #RUN wget --no-verbose https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz && \
 RUN tar zxf spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz && \

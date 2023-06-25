@@ -53,24 +53,40 @@ function parse_args() {
 
 
 function build_airflow_base() {
-  export AIRFLOW_IMAGE_NAME=airflow-base:2.6.1
   export AIRFLOW_VERSION=2.6.1
   export DOCKER_BUILDKIT=1
   docker build docker/airflow/airflow-base \
     --pull \
     --build-arg AIRFLOW_VERSION="${AIRFLOW_VERSION}" \
     --build-arg ADDITIONAL_AIRFLOW_EXTRAS="hdfs,postgres,slack,http" \
-    --tag "${AIRFLOW_IMAGE_NAME}"
+    --tag "airflow-base:${AIRFLOW_VERSION}"
 }
 
 function build_hadoop_base() {
+
+
   docker build -t hadoop-base docker/hadoop/hadoop-base
   docker build -t hive-base docker/hive/hive-base
   docker build -t spark-base docker/spark/spark-base
+
+  docker build -t hadoop-namenode docker/hadoop/hadoop-namenode
+  docker build -t hadoop-datanode docker/hadoop/hadoop-datanode
+
+  docker build -t hive-metastore docker/hive/hive-metastore
+  docker build -t hive-server docker/hive/hive-server
+  docker build -t hive-webhcat docker/hive/hive-webhcat
+
+  docker build -t hue docker/hue
+
+  docker build -t spark-master docker/spark/spark-master
+  docker build -t spark-worker docker/spark/spark-worker
+  docker build -t livy docker/livy
+
 }
 
 function build_image() {
   build_base_image=$1
+  docker build -t airflow-postgres docker/postgres
   if [[ ${build_base_image} == 'airflow' ]]; then
     build_airflow_base
   elif [[ ${build_base_image} == 'hadoop' ]]; then
