@@ -1,0 +1,16 @@
+.idea
+
+
+docker/hadoop/hadoop-base/hadoop-3.1.1.tar.gz
+docker/hive/hive-base/apache-hive-3.1.2-bin.tar.gz
+docker/spark/spark-base/sbt-1.2.8.tgz
+docker/spark/spark-base/scala-2.12.4.tgz
+docker/spark/spark-base/spark-2.4.5-bin-hadoop2.7.tgz
+
+venv
+
+mnt/hadoop/datanode/*
+mnt/hadoop/namenode/*
+
+mnt/spark/apps/*
+mnt/spark/data/*
