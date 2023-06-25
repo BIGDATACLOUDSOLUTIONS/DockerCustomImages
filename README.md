@@ -1,21 +1,7 @@
-[docker-compose.yml](docker-compose_hadoop.yml) --> This will just start hadoop services
-[docker-compose-hadoop-airflow.yml](docker-compose-hadoop-airflow.yml) --> This has both hadoop and airflow services
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-airflow_CeleryExecutor
-
+This can be used to spin below docker images:
+1. Airflow with Celery Executor
+2. Hadoop Cluster
+3. Hadoop Cluster with Airflow
+4. Start edge node to access hadoop cluster
 
 
