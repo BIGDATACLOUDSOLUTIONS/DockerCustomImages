@@ -14,7 +14,7 @@ RUN apt-get install -yqq \
 # For fast build, download and keep file with Dockerfile
 # else comment COPY command and uncomment RUN wget.. command
 COPY ./apache-hive-3.1.2-bin.tar.gz hive.tar.gz
-# RUN wget -c -O hive.tar.gz https://archive.apache.org/dist/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz && \
+# RUN wget -c -O hive.tar.gz https://archive.apache.org/dist/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz
 
 RUN tar xvf hive.tar.gz && \
     rm hive.tar.gz && \
