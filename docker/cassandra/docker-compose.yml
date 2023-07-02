@@ -1,0 +1,11 @@
+version: "3"
+services:
+  cassandra:
+    image: cassandra:latest
+    ports:
+      - 9042:9042
+    volumes:
+      - //c/Users/RAJES/AppData/Local/Temp/cassandra_docker:/var/lib/cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=cloudinfra
+

@@ -58,7 +58,7 @@ function build_airflow_base() {
   docker build docker/airflow/airflow-base \
     --pull \
     --build-arg AIRFLOW_VERSION="${AIRFLOW_VERSION}" \
-    --build-arg ADDITIONAL_AIRFLOW_EXTRAS="hdfs,postgres,slack,http" \
+    --build-arg ADDITIONAL_AIRFLOW_EXTRAS="hdfs,postgres,slack,http,crypto" \
     --tag "airflow-base:${AIRFLOW_VERSION}"
 }
 

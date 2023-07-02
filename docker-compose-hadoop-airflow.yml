@@ -329,7 +329,7 @@ services:
     ports:
       - "32763:9870"
     volumes:
-      - ${HADOOP_DATA_DIR:-.}/mnt/hadoop/namenode:/hadoop/dfs/name
+      - ${HADOOP_DATA_DIR:-.}/mnt/hadoop/namenode:/hadoop/hdfs/name
     environment:
       - CLUSTER_NAME=hadoop_cluster
     healthcheck:
@@ -352,7 +352,7 @@ services:
     depends_on:
       - namenode
     volumes:
-      - ${HADOOP_DATA_DIR:-.}/mnt/hadoop/datanode:/hadoop/dfs/data
+      - ${HADOOP_DATA_DIR:-.}/mnt/hadoop/datanode:/hadoop/hdfs/data
     environment:
       - SERVICE_PRECONDITION=namenode:9870
     healthcheck:
