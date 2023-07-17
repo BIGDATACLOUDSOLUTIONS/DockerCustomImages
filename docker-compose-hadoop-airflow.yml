@@ -32,10 +32,10 @@ x-airflow-common:
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow.cfg:/opt/airflow/airflow.cfg
     - ${AIRFLOW_PROJ_DIR:-.}/temp:/opt/airflow/temp
-    - ${AIRFLOW_PROJ_DIR:-./docker/airflow}/airflow.cfg:/opt/airflow/airflow.cfg
-    #- ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    #- ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+#    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+#    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -329,7 +329,7 @@ services:
     ports:
       - "32763:9870"
     volumes:
-      - ${HADOOP_DATA_DIR:-.}/mnt/hadoop/namenode:/hadoop/hdfs/name
+      - ${HADOOP_DATA_DIR:-./volumes}/hadoop/namenode:/hadoop/hdfs/name
     environment:
       - CLUSTER_NAME=hadoop_cluster
     healthcheck:
@@ -352,7 +352,7 @@ services:
     depends_on:
       - namenode
     volumes:
-      - ${HADOOP_DATA_DIR:-.}/mnt/hadoop/datanode:/hadoop/hdfs/data
+      - ${HADOOP_DATA_DIR:-./volumes}/hadoop/datanode:/hadoop/hdfs/data
     environment:
       - SERVICE_PRECONDITION=namenode:9870
     healthcheck:
@@ -475,8 +475,8 @@ services:
       - "32766:8082"
       - "32765:7077"
     volumes:
-      - ${HADOOP_DATA_DIR:-.}/mnt/spark/apps:/opt/spark-apps
-      - ${HADOOP_DATA_DIR:-.}/mnt/spark/data:/opt/spark-data
+      - ${HADOOP_DATA_DIR:-./volumes}/spark/apps:/opt/spark-apps
+      - ${HADOOP_DATA_DIR:-./volumes}/spark/data:/opt/spark-data
     healthcheck:
       test: [ "CMD", "nc", "-z", "spark-master", "8082" ]
       timeout: 45s
@@ -499,8 +499,8 @@ services:
     ports:
       - "32764:8081"
     volumes:
-      - ${HADOOP_DATA_DIR:-.}/mnt/spark/apps:/opt/spark-apps
-      - ${HADOOP_DATA_DIR:-.}/mnt/spark/data:/opt/spark-data
+      - ${HADOOP_DATA_DIR:-./volumes}/spark/apps:/opt/spark-apps
+      - ${HADOOP_DATA_DIR:-./volumes}/spark/data:/opt/spark-data
     healthcheck:
       test: [ "CMD", "nc", "-z", "spark-worker", "8081" ]
       timeout: 45s
