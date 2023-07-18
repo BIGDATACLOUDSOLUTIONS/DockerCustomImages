@@ -1,7 +1,7 @@
 FROM hive-base:latest
 
 # Defining useful environment variables
-ENV SPARK_VERSION=2.4.5
+ENV SPARK_VERSION=3.2.3
 ENV HADOOP_VERSION=2.7
 ENV SCALA_VERSION=2.12.4
 ENV SCALA_HOME=/usr/share/scala
@@ -67,7 +67,7 @@ RUN apt-get install -yqq python3-numpy python3-matplotlib python3-scipy python3-
 WORKDIR ${SPARK_HOME}
 # For fast build, download and keep file with Dockerfile
 # else comment COPY command and uncomment RUN wget.. command
-COPY ./spark-2.4.5-bin-hadoop2.7.tgz spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz
+COPY ./spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz
 #RUN wget --no-verbose https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz
 RUN tar zxf spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz && \
     mv spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}/* . && \
