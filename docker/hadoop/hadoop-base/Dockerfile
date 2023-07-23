@@ -19,7 +19,7 @@ RUN mkdir -p /opt/hadoop
 
 # For fast build, download and keep file with Dockerfile
 # else comment COPY command and uncomment RUN wget.. command
-#COPY ./hadoop-3.1.1.tar.gz hadoop.tar.gz
+#COPY ./hadoop-3.2.4.tar.gz hadoop.tar.gz
 RUN wget -c -O hadoop.tar.gz https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz
 
 RUN tar xvf hadoop.tar.gz --directory=/opt/hadoop --exclude=hadoop-${HADOOP_VERSION}/share/doc --strip 1 && \

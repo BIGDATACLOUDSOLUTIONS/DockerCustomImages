@@ -34,8 +34,8 @@ WORKDIR /tmp
 
 # For fast build, download and keep file with Dockerfile
 # else comment COPY command and uncomment RUN wget.. command
-COPY ./scala-2.12.4.tgz scala-${SCALA_VERSION}.tgz
-#RUN wget --no-verbose "https://downloads.typesafe.com/scala/${SCALA_VERSION}/scala-${SCALA_VERSION}.tgz"
+#COPY ./scala-2.12.4.tgz scala-${SCALA_VERSION}.tgz
+RUN wget --no-verbose "https://downloads.typesafe.com/scala/${SCALA_VERSION}/scala-${SCALA_VERSION}.tgz"
 RUN tar zxf scala-${SCALA_VERSION}.tgz && \
     mkdir ${SCALA_HOME} && \
     rm "scala-${SCALA_VERSION}/bin/"*.bat && \
