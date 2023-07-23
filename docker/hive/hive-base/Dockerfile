@@ -31,6 +31,10 @@ COPY ./conf/hive-site.xml ${HIVE_HOME}/conf
 COPY ./conf/hive-env.sh ${HIVE_HOME}/conf
 COPY ./conf/ivysettings.xml ${HIVE_HOME}/conf
 
+# Help: http://www.mtitek.com/tutorials/bigdata/hive/install.php
+RUN mv ${HIVE_HOME}/lib/guava-19.0.jar ${HIVE_HOME}/lib/guava-19.0.jar.bak
+RUN cp ${HADOOP_HOME}/share/hadoop/hdfs/lib/guava-27.0-jre.jar ${HIVE_HOME}/lib/
+
 COPY ./entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
