@@ -4,6 +4,16 @@ This can be used to spin below docker images:
 3. A single standalone Hadoop Cluster with Airflow Services
 4. Start edge node to access hadoop cluster
 
+## Components Versions
+1. Hadoop  : 3.2.4
+2. Hive    : 3.1.2
+3. Spark   : 3.2.1
+4. Scala   : 2.12.4
+5. SBT     : 1.2.8
+6. Airflow : 2.6.5
+7. Hue     : 4.10.0
+8. Livy    : Latest
+9. Postgres: 13
 
 ## Pre-requites:
 1. Pull the code from Github
@@ -92,6 +102,11 @@ sh -x start_services.sh --stop hadoop-airflow
 ```
 number_of_workers=2
 sh -x start_services.sh --scale_airflow_worker $number_of_workers
+```
+
+## Start Edge node to Access hadoop and spark
+```
+sh -x start_services.sh --start_edge_node
 ```
 
 ## Cleanup all resources: cleanup

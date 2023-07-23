@@ -20,7 +20,7 @@ ENV ACCEPT_EULA=Y
 
 
 #Download and Install Hadoop
-ENV HADOOP_VERSION=3.1.1
+ENV HADOOP_VERSION=3.2.4
 ENV HADOOP_HOME=/opt/hadoop
 ENV HADOOP_CONF_DIR=/etc/hadoop
 ENV USER=root
@@ -79,8 +79,8 @@ COPY ./conf/hive/ivysettings.xml ${HIVE_HOME}/conf
 
 
 # Defining useful environment variables
-ENV SPARK_VERSION=3.2.3
-ENV HADOOP_VERSION=2.7
+ENV SPARK_VERSION=3.2.1
+ENV HADOOP_VERSION=3.2
 ENV SCALA_VERSION=2.12.4
 ENV SCALA_HOME=/usr/share/scala
 ENV SPARK_HOME=/usr/local/spark
@@ -110,7 +110,7 @@ RUN apt-get update -yqq && \
 # Installing Scala
 WORKDIR /tmp
 
-RUN wget --no-verbose "https://downloads.typesafe.com/scala/${SCALA_VERSION}/scala-${SCALA_VERSION}.tgz" && \
+RUN wget --no-verbose "https://downloads.typesafe.com/scala/${SCALA_VERSION}/scala-${SCALA_VERSION}.tgz"
 RUN tar zxf scala-${SCALA_VERSION}.tgz && \
     mkdir ${SCALA_HOME} && \
     rm "scala-${SCALA_VERSION}/bin/"*.bat && \
@@ -126,22 +126,11 @@ RUN export PATH="/usr/local/sbt/bin:$PATH" && \
     wget -qO - --no-check-certificate "https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz" | tar xz -C /usr/local/sbt --strip-components=1 && \
     sbt sbtVersion
 
-# Adding dependencies for PySpark
-RUN apt-get install -y curl python3.7 python3.7-dev python3.7-distutils
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1
-RUN update-alternatives --set python /usr/bin/python3.7
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3
-RUN pip install --upgrade pip
-RUN apt-get install -yqq python3-numpy python3-pandas
-
-#RUN apt-get install -yqq python3 python3-numpy python3-matplotlib python3-scipy python3-pandas python3-simpy && \
-#    update-alternatives --install "/usr/bin/python" "python" "$(which python3)" 1 && \
-#    curl https://bootstrap.pypa.io/get-pip.py | python3
 
 # Installing Spark
 WORKDIR ${SPARK_HOME}
 
-RUN wget --no-verbose https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz && \
+RUN wget --no-verbose https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz
 RUN tar zxf spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz && \
     mv spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}/* . && \
     rm -rf spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz && \
@@ -154,4 +143,11 @@ RUN apt-get autoremove -yqq --purge && \
     apt-get clean && \
     rm -rf /tmp/* /var/tmp/*
 
-WORKDIR /opt
+
+#Install Python Packages
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3
+RUN pip install --upgrade pip
+RUN apt-get install -yqq python3-numpy python3-pandas
+
+
+WORKDIR /data

@@ -38,6 +38,9 @@ function parse_args() {
       scale_airflow_worker $2
       shift
       ;;
+    --start_edge_node)
+      startEdgeNode
+      ;;
     --cleanup)
       cleanup
       cleanup_flag=yes
@@ -71,6 +74,10 @@ function build_hadoop_base() {
 
   docker build -t hadoop-namenode docker/hadoop/hadoop-namenode
   docker build -t hadoop-datanode docker/hadoop/hadoop-datanode
+
+  docker build -t hadoop-historyserver docker/hadoop/hadoop-historyserver
+  docker build -t hadoop-nodemanager docker/hadoop/hadoop-nodemanager
+  docker build -t hadoop-resourcemanager docker/hadoop/hadoop-resourcemanager
 
   docker build -t hive-metastore docker/hive/hive-metastore
   docker build -t hive-server docker/hive/hive-server
@@ -163,6 +170,21 @@ function cleanup() {
   docker volume prune -f
   docker network prune -f
   #docker rmi -f $(docker images -a -q)
+}
+
+function startEdgeNode() {
+
+    docker stop edgenode >/dev/null 2>&1
+    docker rm -v edgenode >/dev/null 2>&1
+    docker build -t edgenode:latest docker/edge_node
+
+    docker network inspect airflow-network >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        docker run -it --network airflow-network edgenode:latest /bin/bash
+        docker run -it --rm --network airflow-network --name edgenode edgenode:latest /bin/bash
+    else
+        docker run -it --rm --name edgenode edgenode:latest /bin/bash
+    fi
 }
 
 parse_args "$@"
