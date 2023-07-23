@@ -72,6 +72,9 @@ COPY ./conf/hive/hive-site.xml ${HIVE_HOME}/conf
 COPY ./conf/hive/hive-env.sh ${HIVE_HOME}/conf
 COPY ./conf/hive/ivysettings.xml ${HIVE_HOME}/conf
 
+RUN mv ${HIVE_HOME}/lib/guava-19.0.jar ${HIVE_HOME}/lib/guava-19.0.jar.bak
+RUN cp ${HADOOP_HOME}/share/hadoop/hdfs/lib/guava-27.0-jre.jar ${HIVE_HOME}/lib/
+
 
 # Defining useful environment variables
 ENV SPARK_VERSION=3.2.1
