@@ -9,11 +9,12 @@ This can be used to spin below docker images:
 2. Hive    : 3.1.2
 3. Spark   : 3.2.1
 4. Scala   : 2.12.4
-5. SBT     : 1.2.8
-6. Airflow : 2.6.5
-7. Hue     : 4.10.0
-8. Livy    : Latest
-9. Postgres: 13
+5. Python  : 3
+6. SBT     : 1.2.8
+7. Airflow : 2.6.5
+8. Hue     : 4.10.0
+9. Livy    : Latest
+10. Postgres: 13
 
 ## Pre-requites:
 1. Pull the code from Github
