@@ -25,7 +25,7 @@ ENV JAVA_HOME="/usr/lib/jvm/jdk8u372"
 ENV PATH=${JAVA_HOME}/bin/:$PATH
 
 #Download and Install Hadoop
-ENV HADOOP_VERSION=3.1.1
+ENV HADOOP_VERSION=3.2.4
 ENV HADOOP_HOME=/opt/hadoop
 ENV HADOOP_CONF_DIR=/etc/hadoop
 ENV USER=root
@@ -74,8 +74,8 @@ COPY ./conf/hive/ivysettings.xml ${HIVE_HOME}/conf
 
 
 # Defining useful environment variables
-ENV SPARK_VERSION=2.4.5
-ENV HADOOP_VERSION=2.7
+ENV SPARK_VERSION=3.2.1
+ENV HADOOP_VERSION=3.2
 ENV SCALA_VERSION=2.12.4
 ENV SCALA_HOME=/usr/share/scala
 ENV SPARK_HOME=/usr/local/spark
