@@ -182,7 +182,7 @@ function startEdgeNode() {
   fi
 
   if docker network inspect airflow-network >/dev/null 2>&1; then
-    docker run -it --rm --network airflow-network --name edgenode edgenode:latest
+    docker run -it --rm -p 4040-4050:4040-4050 --network airflow-network --name edgenode edgenode:latest
   else
     docker run -it --rm --name edgenode edgenode:latest
   fi
