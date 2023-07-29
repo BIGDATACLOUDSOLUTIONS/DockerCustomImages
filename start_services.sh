@@ -54,7 +54,6 @@ function parse_args() {
 
 }
 
-
 function build_airflow_base() {
   export AIRFLOW_VERSION=2.6.1
   export DOCKER_BUILDKIT=1
@@ -66,7 +65,6 @@ function build_airflow_base() {
 }
 
 function build_hadoop_base() {
-
 
   docker build -t hadoop-base docker/hadoop/hadoop-base
   docker build -t hive-base docker/hive/hive-base
@@ -174,18 +172,20 @@ function cleanup() {
 }
 
 function startEdgeNode() {
+  local build_edge_node_image="NO"
 
-    docker stop edgenode >/dev/null 2>&1
-    docker rm -v edgenode >/dev/null 2>&1
-    docker build -t edgenode:latest docker/edge_node
-
-    docker network inspect airflow-network >/dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        docker run -it --network airflow-network edgenode:latest /bin/bash
-        docker run -it --rm --network airflow-network --name edgenode edgenode:latest /bin/bash
-    else
-        docker run -it --rm --name edgenode edgenode:latest /bin/bash
+  if [[ $build_edge_node_image == "yes" ]]; then
+    if docker stop edgenode >/dev/null 2>&1; then
+      docker rm -v edgenode >/dev/null 2>&1
     fi
+    docker build -t edgenode:latest docker/edge_node
+  fi
+
+  if docker network inspect airflow-network >/dev/null 2>&1; then
+    docker run -it --rm --network airflow-network --name edgenode edgenode:latest
+  else
+    docker run -it --rm --name edgenode edgenode:latest
+  fi
 }
 
 parse_args "$@"
