@@ -74,10 +74,11 @@ function build_hadoop_base() {
 
   docker build -t hadoop-namenode docker/hadoop/hadoop-namenode
   docker build -t hadoop-datanode docker/hadoop/hadoop-datanode
+  docker build -t hadoop-worker docker/hadoop/hadoop-worker
 
   docker build -t hadoop-historyserver docker/hadoop/hadoop-historyserver
-  docker build -t hadoop-nodemanager docker/hadoop/hadoop-nodemanager
-  docker build -t hadoop-resourcemanager docker/hadoop/hadoop-resourcemanager
+  #docker build -t hadoop-nodemanager docker/hadoop/hadoop-nodemanager
+  #docker build -t hadoop-resourcemanager docker/hadoop/hadoop-resourcemanager
 
   docker build -t hive-metastore docker/hive/hive-metastore
   docker build -t hive-server docker/hive/hive-server

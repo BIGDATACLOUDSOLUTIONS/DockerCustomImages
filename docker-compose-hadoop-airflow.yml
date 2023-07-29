@@ -313,9 +313,6 @@ services:
         condition: service_completed_successfully
 
 
-  ######################################################
-  # HADOOP SERVICES
-  ######################################################
   namenode:
     image: hadoop-namenode
     profiles:
@@ -339,29 +336,6 @@ services:
       retries: 10
     restart: always
 
-  datanode:
-    image: hadoop-datanode
-    profiles:
-      - hadoop
-    container_name: datanode
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    depends_on:
-      - namenode
-    volumes:
-      - ${HADOOP_DATA_DIR:-./volumes}/hadoop/datanode:/hadoop/hdfs/data
-    environment:
-      - SERVICE_PRECONDITION=namenode:9870
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "datanode", "9864" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
-
   historyserver:
     image: hadoop-historyserver
     profiles:
@@ -378,17 +352,6 @@ services:
       - namenode
     restart: always
 
-  nodemanager:
-    image: hadoop-nodemanager
-    profiles:
-      - hadoop
-    container_name: nodemanager
-    ports:
-      - "8042:8042"
-    depends_on:
-      - historyserver
-    restart: always
-
   resourcemanager:
     image: hadoop-resourcemanager
     profiles:
@@ -398,6 +361,32 @@ services:
       - "8088:8088"
     depends_on:
       - historyserver
+    restart: always
+
+  worker:
+    image: hadoop-worker
+    profiles:
+      - hadoop
+    container_name: hadoop-worker
+    ports:
+      - "8042:8042"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    depends_on:
+      - namenode
+      - resourcemanager
+    volumes:
+      - ${HADOOP_DATA_DIR:-./volumes}/hadoop/datanode:/hadoop/hdfs/data
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "worker", "9864" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
     restart: always
 
   hive-metastore:
@@ -412,10 +401,10 @@ services:
         max-size: "10m"
     depends_on:
       - namenode
-      - datanode
+      - worker
       - postgres
     environment:
-      - SERVICE_PRECONDITION=namenode:9870 datanode:9864 postgres:5432
+      - SERVICE_PRECONDITION=namenode:9870 worker:9864 postgres:5432
     ports:
       - "32761:9083"
     healthcheck:

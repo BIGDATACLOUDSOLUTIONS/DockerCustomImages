@@ -152,5 +152,17 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 RUN pip install --upgrade pip
 RUN apt-get install -yqq python3-numpy python3-pandas
 
+# Install CURL
+RUN echo "y" | apt install curl
 
-WORKDIR /data
+#Install Vi Editor
+RUN echo "y" | apt install vim
+
+#Install zip
+RUN echo "y" | apt install zip
+
+#Install unzip
+RUN apt install unzip
+
+RUN mkdir -p /home/bdcs
+WORKDIR /home/bdcs

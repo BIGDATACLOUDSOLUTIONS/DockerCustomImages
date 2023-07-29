@@ -1,0 +1,291 @@
+# For Airflow Component: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html
+# For Hadoop Component: Udemy Course: Apache Airflow: The Hands-On Guide by Marc Lamberti
+
+version: '3.8'
+
+services:
+
+######################################################
+# DATABASE SERVICE
+######################################################
+  postgres:
+    image: airflow-postgres
+    container_name: postgres
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    ports:
+      - "32769:5432"
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "airflow", "-U", "airflow" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+
+######################################################
+# HADOOP SERVICES
+######################################################
+  namenode:
+    image: hadoop-namenode
+    profiles:
+      - hadoop
+    container_name: namenode
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    ports:
+      - "32763:9870"
+    volumes:
+      - ${HADOOP_DATA_DIR:-./volumes}/hadoop/namenode:/hadoop/hdfs/name
+    environment:
+      - CLUSTER_NAME=hadoop_cluster
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "namenode", "9870" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+
+  historyserver:
+    image: hadoop-historyserver
+    profiles:
+      - hadoop
+    container_name: historyserver
+    ports:
+      - "8188:8188"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    depends_on:
+      - namenode
+    restart: always
+
+  resourcemanager:
+    image: hadoop-resourcemanager
+    profiles:
+      - hadoop
+    container_name: resourcemanager
+    ports:
+      - "8088:8088"
+    depends_on:
+      - historyserver
+    restart: always
+
+  worker:
+    image: hadoop-worker
+    profiles:
+      - hadoop
+    container_name: hadoop-worker
+    ports:
+      - "8042:8042"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    depends_on:
+      - namenode
+      - resourcemanager
+    volumes:
+      - ${HADOOP_DATA_DIR:-./volumes}/hadoop/datanode:/hadoop/hdfs/data
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "worker", "9864" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+
+  hive-metastore:
+    image: hive-metastore
+    profiles:
+      - hadoop
+    container_name: hive-metastore
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    depends_on:
+      - namenode
+      - worker
+      - postgres
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870 worker:9864 postgres:5432
+    ports:
+      - "32761:9083"
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "hive-metastore", "9083" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+
+  hive-server:
+    image: hive-server
+    profiles:
+      - hadoop
+    container_name: hive-server
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    depends_on:
+      - hive-metastore
+    environment:
+      - SERVICE_PRECONDITION=hive-metastore:9083
+    ports:
+      - "32760:10000"
+      - "32759:10002"
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "hive-server", "10002" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+
+  hive-webhcat:
+    image: hive-webhcat
+    profiles:
+      - hadoop
+    container_name: hive-webhcat
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    depends_on:
+      - hive-server
+    environment:
+      - SERVICE_PRECONDITION=hive-server:10000
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "hive-webhcat", "50111" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+
+  hue:
+    image: hue
+    profiles:
+      - hue
+    container_name: hue
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    depends_on:
+      - hive-server
+      - postgres
+    ports:
+      - "32762:8888"
+    volumes:
+      - ./docker/hue/hue.ini:/usr/share/hue/desktop/conf/z-hue.ini
+    environment:
+      - SERVICE_PRECONDITION=hive-server:10000 postgres:5432
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "hue", "8888" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+
+  ######################################################
+  # SPARK SERVICES
+  ######################################################
+  spark-master:
+    image: spark-master
+    profiles:
+      - hadoop
+    container_name: spark-master
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    ports:
+      - "32766:8082"
+      - "32765:7077"
+    volumes:
+      - ${HADOOP_DATA_DIR:-./volumes}/spark/apps:/opt/spark-apps
+      - ${HADOOP_DATA_DIR:-./volumes}/spark/data:/opt/spark-data
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "spark-master", "8082" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+
+  spark-worker:
+    image: spark-worker
+    profiles:
+      - hadoop
+    container_name: spark-worker
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    depends_on:
+      - spark-master
+    ports:
+      - "32764:8081"
+    volumes:
+      - ${HADOOP_DATA_DIR:-./volumes}/spark/apps:/opt/spark-apps
+      - ${HADOOP_DATA_DIR:-./volumes}/spark/data:/opt/spark-data
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "spark-worker", "8081" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+
+  livy:
+    image: livy
+    profiles:
+      - hadoop
+    container_name: livy
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    depends_on:
+      - spark-worker
+    ports:
+      - "32758:8998"
+    environment:
+      - SPARK_MASTER_ENDPOINT=spark-master
+      - SPARK_MASTER_PORT=7077
+      - DEPLOY_MODE=client
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "livy", "8998" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+
+volumes:
+  postgres-db-volume:
+
+######################################################
+# NETWORK
+######################################################
+networks:
+  default:
+    name: hadoop-network
