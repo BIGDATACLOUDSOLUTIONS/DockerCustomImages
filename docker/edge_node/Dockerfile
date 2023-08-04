@@ -155,11 +155,17 @@ RUN apt-get install -yqq python3-numpy python3-pandas
 # Install CURL
 RUN echo "y" | apt install curl
 
+# Install Ping
+RUN echo "y" | apt install iputils-ping
+
 #Install Vi Editor
 RUN echo "y" | apt install vim
 
 #Install zip
 RUN echo "y" | apt install zip
+
+#Install dos2unix to remove junk characters
+RUN echo "y" | apt install dos2unix
 
 #Install unzip
 RUN apt install unzip
