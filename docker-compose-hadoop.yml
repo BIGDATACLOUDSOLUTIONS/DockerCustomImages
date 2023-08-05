@@ -11,6 +11,8 @@ services:
   postgres:
     image: airflow-postgres
     container_name: postgres
+    networks:
+      - hadoop-network
     logging:
       driver: "json-file"
       options:
@@ -36,9 +38,9 @@ services:
 ######################################################
   namenode:
     image: hadoop-namenode
-    profiles:
-      - hadoop
     container_name: namenode
+    networks:
+      - hadoop-network
     logging:
       driver: "json-file"
       options:
@@ -59,9 +61,9 @@ services:
 
   historyserver:
     image: hadoop-historyserver
-    profiles:
-      - hadoop
     container_name: historyserver
+    networks:
+      - hadoop-network
     ports:
       - "8188:8188"
     logging:
@@ -75,9 +77,9 @@ services:
 
   resourcemanager:
     image: hadoop-resourcemanager
-    profiles:
-      - hadoop
     container_name: resourcemanager
+    networks:
+      - hadoop-network
     ports:
       - "8088:8088"
     depends_on:
@@ -86,9 +88,9 @@ services:
 
   worker:
     image: hadoop-worker
-    profiles:
-      - hadoop
     container_name: hadoop-worker
+    networks:
+      - hadoop-network
     ports:
       - "8042:8042"
     logging:
@@ -112,9 +114,9 @@ services:
 
   hive-metastore:
     image: hive-metastore
-    profiles:
-      - hadoop
     container_name: hive-metastore
+    networks:
+      - hadoop-network
     logging:
       driver: "json-file"
       options:
@@ -137,9 +139,9 @@ services:
 
   hive-server:
     image: hive-server
-    profiles:
-      - hadoop
     container_name: hive-server
+    networks:
+      - hadoop-network
     logging:
       driver: "json-file"
       options:
@@ -161,9 +163,9 @@ services:
 
   hive-webhcat:
     image: hive-webhcat
-    profiles:
-      - hadoop
     container_name: hive-webhcat
+    networks:
+      - hadoop-network
     logging:
       driver: "json-file"
       options:
@@ -185,6 +187,8 @@ services:
     profiles:
       - hue
     container_name: hue
+    networks:
+      - hadoop-network
     logging:
       driver: "json-file"
       options:
@@ -206,14 +210,14 @@ services:
       retries: 10
     restart: always
 
-  ######################################################
-  # SPARK SERVICES
-  ######################################################
+######################################################
+# SPARK SERVICES
+######################################################
   spark-master:
     image: spark-master
-    profiles:
-      - hadoop
     container_name: spark-master
+    networks:
+      - hadoop-network
     logging:
       driver: "json-file"
       options:
@@ -234,9 +238,9 @@ services:
 
   spark-worker:
     image: spark-worker
-    profiles:
-      - hadoop
     container_name: spark-worker
+    networks:
+      - hadoop-network
     logging:
       driver: "json-file"
       options:
@@ -257,9 +261,9 @@ services:
 
   livy:
     image: livy
-    profiles:
-      - hadoop
     container_name: livy
+    networks:
+      - hadoop-network
     logging:
       driver: "json-file"
       options:
@@ -280,6 +284,19 @@ services:
       retries: 10
     restart: always
 
+  edgenode:
+    image: edgenode:latest
+    container_name: edgenode
+    networks:
+      - hadoop-network
+    ports:
+      - "4040-4043:4040-4043"
+    volumes:
+      - ${EXTRA_JAR_PATH}:/home/bdcs/external_jars
+    command:
+      - tail -f /dev/null
+    restart: no
+
 volumes:
   postgres-db-volume:
 
@@ -287,5 +304,7 @@ volumes:
 # NETWORK
 ######################################################
 networks:
-  default:
+  hadoop-network:
     name: hadoop-network
+    external: true
+

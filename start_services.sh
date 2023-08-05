@@ -35,7 +35,7 @@ function parse_args() {
       shift
       ;;
     --scale_airflow_worker)
-      scale_airflow_worker $2
+      scale_airflow_worker $2 $3
       shift
       ;;
     --start_edge_node)
@@ -62,6 +62,20 @@ function build_airflow_base() {
     --build-arg AIRFLOW_VERSION="${AIRFLOW_VERSION}" \
     --build-arg ADDITIONAL_AIRFLOW_EXTRAS="hdfs,postgres,slack,http,crypto" \
     --tag "airflow-base:${AIRFLOW_VERSION}"
+}
+
+function create_docker_network() {
+  network_name=$1
+  if ! docker network inspect ${network_name} >/dev/null 2>&1; then
+    docker network create ${network_name}
+  fi
+}
+
+function remove_docker_network() {
+  network_name=$1
+  if docker network inspect ${network_name} >/dev/null 2>&1; then
+    docker network rm ${network_name}
+  fi
 }
 
 function build_hadoop_base() {
@@ -103,23 +117,30 @@ function build_image() {
     export AIRFLOW_IMAGE_NAME=airflow-hadoop:latest
     docker build -t ${AIRFLOW_IMAGE_NAME} docker/airflow/airflow-hadoop
   else
-    echo "Wrong Base Image Name. Please specify either airflow/hadoop/hadoop-airflow"
+    echo "Wrong Service Name. Please specify either airflow/hadoop/hadoop-airflow"
     exit 1
   fi
 }
 
 function start_services() {
   service_name=$1
+
+  create_docker_network airflow-network
+  create_docker_network hadoop-network
+  create_docker_network dataflow-network
+
   if [[ ${service_name} == 'airflow' ]]; then
     export AIRFLOW_IMAGE_NAME=airflow-base:2.6.1
-    docker compose -f docker-compose-hadoop-airflow.yml --profile airflow up -d
+    docker compose -f docker-compose-airflow.yml up -d
   elif [[ ${service_name} == 'hadoop' ]]; then
-    docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop up -d
+    docker compose -f docker-compose-hadoop.yml up -d
   elif [[ ${service_name} == 'hadoop-airflow' ]]; then
     export AIRFLOW_IMAGE_NAME=airflow-hadoop:latest
     docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop --profile airflow up -d
+  elif [[ ${service_name} == 'kafka' ]]; then
+    docker compose -f docker/kafka/docker-compose-1-kafka-brokers.yml up -d
   else
-    echo "Wrong Service Name. Please specify either airflow/hadoop/hadoop-airflow"
+    echo "Wrong Service Name. Please specify either airflow/hadoop/hadoop-airflow/kafka"
     exit 1
   fi
 }
@@ -128,17 +149,19 @@ function restart_service() {
   service_name=$1
   if [[ ${service_name} == 'airflow' ]]; then
     export AIRFLOW_IMAGE_NAME=airflow-base:2.6.1
-    docker compose -f docker-compose-hadoop-airflow.yml --profile airflow down
-    docker compose -f docker-compose-hadoop-airflow.yml --profile airflow up -d
+    docker compose -f docker-compose-airflow.yml down
+    start_services $service_name
   elif [[ ${service_name} == 'hadoop' ]]; then
-    docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop down
-    docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop up -d
+    docker compose -f docker-compose-hadoop.yml down
+    start_services $service_name
   elif [[ ${service_name} == 'hadoop-airflow' ]]; then
-    export AIRFLOW_IMAGE_NAME=airflow-hadoop:latest
     docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop --profile airflow down
-    docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop --profile airflow up -d
+    start_services $service_name
+  elif [[ ${service_name} == 'kafka' ]]; then
+    docker compose -f docker/kafka/docker-compose-1-kafka-brokers.yml down
+    start_services $service_name
   else
-    echo "Wrong Service Name. Please specify either airflow/hadoop/hadoop-airflow"
+    echo "Wrong Service Name. Please specify either airflow/hadoop/hadoop-airflow/kafka"
     exit 1
   fi
 
@@ -147,24 +170,31 @@ function restart_service() {
 function stop_service() {
   service_name=$1
   if [[ ${service_name} == 'airflow' ]]; then
-    docker compose -f docker-compose-hadoop-airflow.yml --profile airflow down
+    docker compose -f docker-compose-airflow.yml down #--remove-orphans
   elif [[ ${service_name} == 'hadoop' ]]; then
-    docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop down
+    docker compose -f docker-compose-hadoop.yml down --remove-orphans
   elif [[ ${service_name} == 'hadoop-airflow' ]]; then
-    docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop --profile airflow down
+    docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop --profile airflow down --remove-orphans
+  elif [[ ${service_name} == 'kafka' ]]; then
+    docker compose -f docker/kafka/docker-compose-1-kafka-brokers.yml down
   else
-    echo "Wrong Service Name. Please specify either airflow/hadoop/hadoop-airflow"
+    echo "Wrong Service Name. Please specify either airflow/hadoop/hadoop-airflow/kafka"
     exit 1
   fi
 }
 
 function scale_airflow_worker() {
-  number_of_workers=$1
-  docker compose -f docker-compose-hadoop-airflow.yml --profile airflow --scale airflow-worker=$number_of_workers -d
+  service_name=$1
+  number_of_workers=$2
+  if [[ ${service_name} == 'airflow' ]]; then
+    docker compose -f docker-compose-${service_name}.yml --scale airflow-worker=$number_of_workers -d
+  elif [[ ${service_name} == 'hadoop-airflow' ]]; then
+    docker compose -f docker-compose-${service_name}.yml --profile airflow --scale airflow-worker=$number_of_workers -d
+  fi
 }
 
 function cleanup() {
-  docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop --profile airflow down
+  docker stop $(docker ps -aq) && docker rm $(docker ps -aq)
   docker system prune -f
   docker volume prune -f
   docker network prune -f
@@ -181,11 +211,10 @@ function startEdgeNode() {
     docker build -t edgenode:latest docker/edge_node
   fi
 
-  if docker network inspect airflow-network >/dev/null 2>&1; then
-    docker run -it --rm -p 4040-4050:4040-4050 --network airflow-network --name edgenode edgenode:latest
-  else
-    docker run -it --rm --name edgenode edgenode:latest
-  fi
+  docker run -itd --rm -p 4040-4043:4040-4043 --name edgenode edgenode:latest
+  docker network connect airflow-network edgenode
+  docker network connect hadoop-network edgenode
+  docker network connect dataflow-network edgenode
 }
 
 parse_args "$@"

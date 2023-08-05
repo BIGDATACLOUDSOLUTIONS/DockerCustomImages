@@ -173,4 +173,5 @@ RUN apt install unzip
 RUN mkdir -p /home/bdcs
 WORKDIR /home/bdcs
 
-CMD ["/bin/bash"]
+#CMD ["/bin/bash"]
+ENTRYPOINT ["tail","-f","/dev/null"]

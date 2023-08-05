@@ -53,7 +53,7 @@ services:
     image: airflow-postgres
     container_name: postgres
     networks:
-      - dataflow-network
+      - airflow-network
     logging:
       driver: "json-file"
       options:
@@ -78,7 +78,7 @@ services:
     image: wodby/adminer:latest
     container_name: adminer
     networks:
-      - dataflow-network
+      - airflow-network
     profiles:
       - adminer
     logging:
@@ -103,9 +103,7 @@ services:
     image: redis:latest
     container_name: redis
     networks:
-      - dataflow-network
-    profiles:
-      - airflow
+      - airflow-network
     expose:
       - 6379
     healthcheck:
@@ -124,9 +122,7 @@ services:
     container_name: webserver
     command: webserver
     networks:
-      - dataflow-network
-    profiles:
-      - airflow
+      - airflow-network
     ports:
       - "8080:8080"
     healthcheck:
@@ -146,9 +142,7 @@ services:
     container_name: airflow-scheduler
     command: scheduler
     networks:
-      - dataflow-network
-    profiles:
-      - airflow
+      - airflow-network
     healthcheck:
       test: [ "CMD", "curl", "--fail", "http://localhost:8974/health" ]
       interval: 30s
@@ -166,9 +160,7 @@ services:
     container_name: airflow-worker
     command: celery worker -q spark,default
     networks:
-      - dataflow-network
-    profiles:
-      - airflow
+      - airflow-network
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -193,9 +185,7 @@ services:
     container_name: airflow-triggerer
     command: triggerer
     networks:
-      - dataflow-network
-    profiles:
-      - airflow
+      - airflow-network
     healthcheck:
       test: [ "CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"' ]
       interval: 30s
@@ -212,9 +202,7 @@ services:
     <<: *airflow-common
     container_name: airflow-init
     networks:
-      - dataflow-network
-    profiles:
-      - airflow
+      - airflow-network
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
     command:
@@ -295,7 +283,7 @@ services:
     <<: *airflow-common
     container_name: airflow-cli
     networks:
-      - dataflow-network
+      - airflow-network
     profiles:
       - airflow-cli
     environment:
@@ -315,7 +303,7 @@ services:
     container_name: flower
     command: celery flower
     networks:
-      - dataflow-network
+      - airflow-network
     profiles:
       - flower
     ports:
@@ -331,284 +319,14 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-######################################################
-# HADOOP SERVICES
-######################################################
-  namenode:
-    image: hadoop-namenode
-    profiles:
-      - hadoop
-    container_name: namenode
-    networks:
-      - dataflow-network
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    ports:
-      - "32763:9870"
-    volumes:
-      - ${HADOOP_DATA_DIR:-./volumes}/hadoop/namenode:/hadoop/hdfs/name
-    environment:
-      - CLUSTER_NAME=hadoop_cluster
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "namenode", "9870" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
-
-  historyserver:
-    image: hadoop-historyserver
-    profiles:
-      - hadoop
-    container_name: historyserver
-    networks:
-      - dataflow-network
-    ports:
-      - "8188:8188"
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    depends_on:
-      - namenode
-    restart: always
-
-  resourcemanager:
-    image: hadoop-resourcemanager
-    profiles:
-      - hadoop
-    container_name: resourcemanager
-    networks:
-      - dataflow-network
-    ports:
-      - "8088:8088"
-    depends_on:
-      - historyserver
-    restart: always
-
-  worker:
-    image: hadoop-worker
-    profiles:
-      - hadoop
-    container_name: hadoop-worker
-    networks:
-      - dataflow-network
-    ports:
-      - "8042:8042"
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    depends_on:
-      - namenode
-      - resourcemanager
-    volumes:
-      - ${HADOOP_DATA_DIR:-./volumes}/hadoop/datanode:/hadoop/hdfs/data
-    environment:
-      - SERVICE_PRECONDITION=namenode:9870
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "worker", "9864" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
-
-  hive-metastore:
-    image: hive-metastore
-    profiles:
-      - hadoop
-    container_name: hive-metastore
-    networks:
-      - dataflow-network
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    depends_on:
-      - namenode
-      - worker
-      - postgres
-    environment:
-      - SERVICE_PRECONDITION=namenode:9870 worker:9864 postgres:5432
-    ports:
-      - "32761:9083"
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "hive-metastore", "9083" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
-
-  hive-server:
-    image: hive-server
-    profiles:
-      - hadoop
-    container_name: hive-server
-    networks:
-      - dataflow-network
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    depends_on:
-      - hive-metastore
-    environment:
-      - SERVICE_PRECONDITION=hive-metastore:9083
-    ports:
-      - "32760:10000"
-      - "32759:10002"
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "hive-server", "10002" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
-
-  hive-webhcat:
-    image: hive-webhcat
-    profiles:
-      - hadoop
-    container_name: hive-webhcat
-    networks:
-      - dataflow-network
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    depends_on:
-      - hive-server
-    environment:
-      - SERVICE_PRECONDITION=hive-server:10000
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "hive-webhcat", "50111" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
-
-  hue:
-    image: hue
-    profiles:
-      - hue
-    container_name: hue
-    networks:
-      - dataflow-network
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    depends_on:
-      - hive-server
-      - postgres
-    ports:
-      - "32762:8888"
-    volumes:
-      - ./docker/hue/hue.ini:/usr/share/hue/desktop/conf/z-hue.ini
-    environment:
-      - SERVICE_PRECONDITION=hive-server:10000 postgres:5432
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "hue", "8888" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
-
-  ######################################################
-  # SPARK SERVICES
-  ######################################################
-  spark-master:
-    image: spark-master
-    profiles:
-      - hadoop
-    container_name: spark-master
-    networks:
-      - dataflow-network
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    ports:
-      - "32766:8082"
-      - "32765:7077"
-    volumes:
-      - ${HADOOP_DATA_DIR:-./volumes}/spark/apps:/opt/spark-apps
-      - ${HADOOP_DATA_DIR:-./volumes}/spark/data:/opt/spark-data
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "spark-master", "8082" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
-
-  spark-worker:
-    image: spark-worker
-    profiles:
-      - hadoop
-    container_name: spark-worker
-    networks:
-      - dataflow-network
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    depends_on:
-      - spark-master
-    ports:
-      - "32764:8081"
-    volumes:
-      - ${HADOOP_DATA_DIR:-./volumes}/spark/apps:/opt/spark-apps
-      - ${HADOOP_DATA_DIR:-./volumes}/spark/data:/opt/spark-data
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "spark-worker", "8081" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-
-  livy:
-    image: livy
-    profiles:
-      - hadoop
-    container_name: livy
-    networks:
-      - dataflow-network
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    depends_on:
-      - spark-worker
-    ports:
-      - "32758:8998"
-    environment:
-      - SPARK_MASTER_ENDPOINT=spark-master
-      - SPARK_MASTER_PORT=7077
-      - DEPLOY_MODE=client
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "livy", "8998" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
 
 volumes:
   postgres-db-volume:
 
 ######################################################
-# NETWORKS
+# NETWORK
 ######################################################
 networks:
-  dataflow-network:
-      name: dataflow-network
+  airflow-network:
+      name: airflow-network
       external: true
