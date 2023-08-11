@@ -158,6 +158,7 @@ function restart_service() {
     docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop --profile airflow down
     start_services $service_name
   elif [[ ${service_name} == 'kafka' ]]; then
+    docker volume rm kafka-single-node-volume
     docker compose -f docker/kafka/docker-compose-1-kafka-brokers.yml down
     start_services $service_name
   else
