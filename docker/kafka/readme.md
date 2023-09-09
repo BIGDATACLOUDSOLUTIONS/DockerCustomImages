@@ -13,10 +13,10 @@ localhost to ipaddress of the host machine and broker address will change to hos
 
 
 ## Confluent 3 node kafka
-    ```
-    cd docker/kafka
-    docker compose -f docker-compose-3-kafka-brokers.yml up -d
-    ```
+```
+cd docker/kafka
+docker compose -f docker-compose-3-kafka-brokers.yml up -d
+```
 #### Kafka Broker: localhost:19092,localhost:29092,localhost:39092
 #### Schema Registry URL: http://localhost:18081
 
@@ -43,20 +43,44 @@ docker exec -it kafka-kafka-broker-1-1 /bin/bash
 
 ```
 #Create kafka topic
-kafka-topics.sh --bootstrap-server localhost:9092 --topic first_topic --create --partitions 3 --replication-factor 1
+kafka-topics \
+--bootstrap-server localhost:9092 \
+--topic first_topic \
+--create --partitions 3 \
+--replication-factor 1
 ```
-```
+
 #List kafka topic
+```
 kafka-topics --list --bootstrap-server localhost:9092
 ```
 
 ### Kafka Producer
 ```
-kafka-console-producer.sh --bootstrap-server localhost:9092 --topic first_topic
+kafka-console-producer \
+--bootstrap-server localhost:9092 \
+--topic first_topic
+```
+
+```
+#Send a message as key values like: 
+#SET41:{"CreatedTime": "2019-02-05 09:54:00","Reading": 36.2}
+kafka-console-producer \
+--bootstrap-server localhost:9092 \
+--topic sensor \
+--property parse.key=true \
+--property key.separator=:
 ```
 
 ### Kafka Consumer
 ```
-kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic first_topic --from-beginning
+kafka-console-consumer \
+--bootstrap-server localhost:9092 \
+--topic first_topic \
+--from-beginning
 ```
+### Schema Registry Commands:
+[ConfluentGithub](https://github.com/confluentinc/schema-registry/blob/master/README.md)
+</br>[Medium.com](https://ranjitnagi.medium.com/commonly-used-confluent-schema-registry-apis-methods-cf94ce9a68f7)
+
 

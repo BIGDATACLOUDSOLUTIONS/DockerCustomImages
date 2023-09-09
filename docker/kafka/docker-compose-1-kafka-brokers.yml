@@ -11,12 +11,10 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "12181:2181"
-    volumes:
-      - kafka-single-node-volume:/var/lib/zookeeper/data
-      - kafka-single-node-volume:/var/lib/zookeeper/log
 
   kafka-broker-1:
     image: confluentinc/cp-kafka:latest
+    container_name: kafka-broker-1
     hostname: kafka-broker-1
     networks:
       - dataflow-network
@@ -32,11 +30,10 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker-1:9092,PLAINTEXT_INTERNAL://localhost:19092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
-    volumes:
-      - kafka-single-node-volume:/var/lib/kafka/data
 
   schema-registry:
     image: confluentinc/cp-schema-registry:latest
+    container_name: schema-registry
     hostname: schema-registry
     networks:
       - dataflow-network
@@ -51,9 +48,6 @@ services:
       SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-broker-1:9092,PLAINTEXT_INTERNAL://localhost:19092
       SCHEMA_REGISTRY_DEBUG: 'true'
-
-volumes:
-  kafka-single-node-volume:
 
 networks:
   dataflow-network:

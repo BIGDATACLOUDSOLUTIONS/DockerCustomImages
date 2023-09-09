@@ -47,17 +47,17 @@ sh -x start_services.sh --build hadoop-airflow
 ```
 
 ## Start Services
-Start only Airflow Services
+Start only **Airflow Services**
 ```
 sh -x start_services.sh --start airflow
 ```
 
-Start only Hadoop Services
+Start only **Hadoop Services**
 ```
 sh -x start_services.sh --start hadoop
 ```
 
-Start Hadoop with airflow Services
+Start **Hadoop with airflow Services**
 ```
 sh -x start_services.sh --start hadoop-airflow
 ```
@@ -84,17 +84,17 @@ sh -x start_services.sh --restart hadoop-airflow
 ```
 
 ## Stop Services
-Stop only Airflow Services
+Stop only **Airflow Services**
 ```
 sh -x start_services.sh --stop airflow
 ```
 
-Stop only Hadoop Services
+Stop only **Hadoop Services**
 ```
 sh -x start_services.sh --stop hadoop
 ```
 
-Stop Hadoop with airflow Services
+Stop **Hadoop with Airflow Services**
 ```
 sh -x start_services.sh --stop hadoop-airflow
 ```
@@ -105,7 +105,12 @@ number_of_workers=2
 sh -x start_services.sh --scale_airflow_worker $number_of_workers
 ```
 
-## Start Edge node to Access hadoop and spark
+## Connect to Edge node if it's running(edgenode starts with hadoop only option)
+```
+docker exec -it edgenode /bin/bash
+```
+
+## Start Edge node for ADHOC work. If other services are running, it can access the same
 ```
 sh -x start_services.sh --start_edge_node
 ```

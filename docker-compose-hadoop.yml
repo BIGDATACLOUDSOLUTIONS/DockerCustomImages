@@ -290,7 +290,7 @@ services:
     networks:
       - hadoop-network
     ports:
-      - "4040-4043:4040-4043"
+      - "4060-4063:4040-4043"
     volumes:
       - ${EXTRA_JAR_PATH}:/home/bdcs/external_jars
     command:

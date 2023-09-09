@@ -39,7 +39,7 @@ function parse_args() {
       shift
       ;;
     --start_edge_node)
-      startEdgeNode
+      startEdgeNode $2
       ;;
     --cleanup)
       cleanup
@@ -158,7 +158,6 @@ function restart_service() {
     docker compose -f docker-compose-hadoop-airflow.yml --profile hadoop --profile airflow down
     start_services $service_name
   elif [[ ${service_name} == 'kafka' ]]; then
-    docker volume rm kafka-single-node-volume
     docker compose -f docker/kafka/docker-compose-1-kafka-brokers.yml down
     start_services $service_name
   else
@@ -203,7 +202,7 @@ function cleanup() {
 }
 
 function startEdgeNode() {
-  local build_edge_node_image="NO"
+  local build_edge_node_image=$1  #yes or no
 
   if [[ $build_edge_node_image == "yes" ]]; then
     if docker stop edgenode >/dev/null 2>&1; then
@@ -212,7 +211,7 @@ function startEdgeNode() {
     docker build -t edgenode:latest docker/edge_node
   fi
 
-  docker run -itd --rm -p 4040-4043:4040-4043 --name edgenode edgenode:latest
+  docker run -itd --rm -p 4060-4063:4040-4043 --name edgenode edgenode:latest
   docker network connect airflow-network edgenode
   docker network connect hadoop-network edgenode
   docker network connect dataflow-network edgenode
